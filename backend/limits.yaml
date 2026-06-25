@@ -1,0 +1,31 @@
+# Tier limits and provider budgets. Edited live via the admin panel (future),
+# read on every request. Reset window is a fixed daily window (UTC midnight).
+
+anonymous:
+  apify: 3
+  brave: 3
+  ddg: 10
+
+registered:
+  apify: 20
+  brave: 20
+  ddg: unlimited   # use the string "unlimited" for no cap
+
+# Fallback SERP vendors — per-key daily caps to stay inside free tiers.
+fallback:
+  serper: 80
+  scaleserp: 30
+  serpapi: 3
+
+# Hard global daily ceiling — the kill-switch. Protects the billable provider
+# (Apify costs platform credits). Once hit, STOP for the day (never silently bill).
+global:
+  guarded_provider: apify
+  daily_cap: 100
+
+# Entity extraction. Free users use spaCy; registered users use the premium
+# engine (Google NL / LangExtract) under hard caps, then fall back to spaCy.
+entities:
+  max_chars: 5000              # truncate before billing; ~5 Google NL units/call
+  google_nl_units_month: 5000  # = free tier; hard monthly cap → $0 spend
+  langextract_daily: 50        # request cap for the LLM actor path
