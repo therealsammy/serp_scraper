@@ -1,6 +1,7 @@
 """Async SQLAlchemy engine/session and Redis client."""
 from __future__ import annotations
 
+import ssl
 from collections.abc import AsyncGenerator
 
 import redis.asyncio as aioredis
@@ -27,12 +28,17 @@ def _async_db_url(url: str) -> str:
 
 
 def _engine_kwargs(url: str) -> dict:
-    """Remote managed Postgres (Supabase/Neon) requires TLS; asyncpg needs it
-    passed via connect_args. Skip for local docker-compose."""
+    """Remote managed Postgres (Supabase/Neon) requires TLS; asyncpg needs an SSL
+    context via connect_args. Supabase's pooler presents a cert our container's CA
+    bundle doesn't fully trust, so encrypt without chain verification. Skip for
+    local docker-compose."""
     host_is_local = "localhost" in url or "127.0.0.1" in url or "@db:" in url
     if host_is_local:
         return {}
-    return {"connect_args": {"ssl": True}}
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return {"connect_args": {"ssl": ctx}}
 
 
 _db_url = _async_db_url(settings.database_url)
