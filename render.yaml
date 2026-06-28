@@ -14,10 +14,7 @@ services:
       - key: DATABASE_URL
         sync: false          # Supabase Postgres connection string (set in dashboard)
       - key: REDIS_URL
-        fromService:
-          name: serp-redis
-          type: redis
-          property: connectionString
+        sync: false          # Upstash Redis URL (rediss://...) — set in dashboard
       - key: FRONTEND_ORIGIN
         sync: false          # set to your Vercel URL, e.g. https://serp.vercel.app
       - key: JWT_SECRET
@@ -46,11 +43,6 @@ services:
       - key: LANGEXTRACT_MODEL
         sync: false
 
-  - type: redis
-    name: serp-redis
-    plan: free
-    maxmemoryPolicy: noeviction   # quota counters must not be evicted
-    ipAllowList: []               # internal-only
-
-# Postgres is external (Supabase free tier — no 30-day expiry).
-# Set DATABASE_URL on the backend service in the Render dashboard.
+# Data stores are external (free tiers, no expiry):
+#   - Postgres → Supabase   (set DATABASE_URL in the dashboard)
+#   - Redis    → Upstash     (set REDIS_URL in the dashboard; use the rediss:// TLS URL)
