@@ -5,11 +5,6 @@ extracts clean article text from each result, runs on-demand **entity extraction
 (top-10 by salience)**, and serves it through an enterprise-style UI — governed by a
 tiered quota engine with hard cost caps and invite-only access.
 
-> **Compliance note:** Google results come from **Apify's managed Google Search
-> Results Scraper** (a sanctioned API — Apify runs the infrastructure), not
-> home-grown SERP scraping or CAPTCHA circumvention. The tool is rate-limited and
-> intended for low-volume research.
-
 ## Stack
 
 | Layer | Tech |
@@ -23,16 +18,15 @@ tiered quota engine with hard cost caps and invite-only access.
 
 ## Features
 
-- **Multi-provider search** — Google (via Apify), Brave, DuckDuckGo, behind one
-  interface; pick the provider per query.
+- **Multi-provider search** — Google, Brave (no API key added yet), DuckDuckGo, behind one interface; pick the provider per query.
 - **Geo-targeting** — country + language + **city-level** results. City precision uses
   Google's UULE encoding (e.g. "Austin, Texas, United States"). Same query from
   different cities returns genuinely localized SERPs.
 - **SERP fallback rotation** — Serper → ScaleSERP → SerpAPI for registered users,
-  per-key daily caps + circuit breaker (one legitimate account per vendor).
+  per-key daily caps + circuit breaker.
 - **Content extraction** — Playwright fetches JS-rendered pages, trafilatura strips
   boilerplate; results **stream in over SSE** as each page finishes, with per-result
-  status (extracted / blocked / error).
+  status (extracted/blocked/error).
 - **Entity extraction (top-10 by salience)** — per-result button. **Tier-based:** free
   users get local **spaCy** (computed salience); registered users get premium **Google
   NL** (native salience) or **Apify LangExtract** (LLM), with hard caps and spaCy

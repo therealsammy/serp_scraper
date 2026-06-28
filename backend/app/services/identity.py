@@ -11,7 +11,15 @@ import secrets
 
 from fastapi import Request, Response
 
+from ..config import settings
+
 COOKIE_NAME = "anon_id"
+
+# Cross-site (Vercel frontend ↔ Render backend over HTTPS) requires
+# SameSite=None + Secure for the cookie to be sent on XHR. Locally (http) use Lax.
+_CROSS_SITE = settings.frontend_origin.startswith("https://")
+_COOKIE_SAMESITE = "none" if _CROSS_SITE else "lax"
+_COOKIE_SECURE = _CROSS_SITE
 
 
 def _hash(*parts: str) -> str:
@@ -38,7 +46,8 @@ def get_or_set_cookie(request: Request, response: Response) -> str:
     if not token:
         token = secrets.token_urlsafe(16)
         response.set_cookie(
-            COOKIE_NAME, token, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30
+            COOKIE_NAME, token, httponly=True, samesite=_COOKIE_SAMESITE,
+            secure=_COOKIE_SECURE, max_age=60 * 60 * 24 * 30,
         )
     return token
 

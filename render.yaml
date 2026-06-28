@@ -1,0 +1,59 @@
+# Render blueprint: backend (Docker) + managed Postgres + Redis.
+# Deploy by pointing Render at this repo ("New + → Blueprint").
+# The frontend deploys separately on Vercel (see DEPLOY.md).
+
+services:
+  - type: web
+    name: serp-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter            # free tier sleeps when idle; bump for always-on demos
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: serp-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: serp-redis
+          type: redis
+          property: connectionString
+      - key: FRONTEND_ORIGIN
+        sync: false          # set to your Vercel URL, e.g. https://serp.vercel.app
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_BOOTSTRAP_EMAIL
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
+      # Provider keys — set in the Render dashboard (sync:false keeps them out of git)
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: SERPER_API_KEY
+        sync: false
+      - key: SCALESERP_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: GOOGLE_NL_API_KEY
+        sync: false
+      - key: LANGEXTRACT_LLM_PROVIDER
+        sync: false
+      - key: LANGEXTRACT_LLM_KEY
+        sync: false
+      - key: LANGEXTRACT_MODEL
+        sync: false
+
+  - type: redis
+    name: serp-redis
+    plan: starter
+    maxmemoryPolicy: noeviction   # quota counters must not be evicted
+    ipAllowList: []               # internal-only
+
+databases:
+  - name: serp-postgres
+    plan: starter

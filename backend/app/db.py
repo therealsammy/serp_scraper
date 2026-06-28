@@ -13,7 +13,30 @@ from sqlalchemy.orm import DeclarativeBase
 
 from .config import settings
 
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+
+def _async_db_url(url: str) -> str:
+    """Normalize managed-Postgres URLs (Render/Neon/Supabase give postgres://
+    or postgresql://) to the async driver SQLAlchemy needs."""
+    if url.startswith("postgresql+asyncpg://"):
+        return url
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    return url
+
+
+def _engine_kwargs(url: str) -> dict:
+    """Remote managed Postgres (Supabase/Neon) requires TLS; asyncpg needs it
+    passed via connect_args. Skip for local docker-compose."""
+    host_is_local = "localhost" in url or "127.0.0.1" in url or "@db:" in url
+    if host_is_local:
+        return {}
+    return {"connect_args": {"ssl": True}}
+
+
+_db_url = _async_db_url(settings.database_url)
+engine = create_async_engine(_db_url, pool_pre_ping=True, **_engine_kwargs(_db_url))
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 redis_client: aioredis.Redis = aioredis.from_url(
