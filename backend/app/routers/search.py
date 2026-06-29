@@ -82,7 +82,7 @@ async def search(
         except ProviderError:
             raise HTTPException(429, _grace_message("all_providers_exhausted"))
     except ProviderError as exc:
-        raise HTTPException(502, f"Provider error: {exc}")
+        raise HTTPException(502, str(exc))
 
     # Only cache non-empty result sets — never poison the cache with a failed/empty run.
     if results:

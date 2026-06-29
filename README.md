@@ -18,7 +18,7 @@ tiered quota engine with hard cost caps and invite-only access.
 
 ## Features
 
-- **Multi-provider search** — Google, Brave (no API key added yet), DuckDuckGo, behind one interface; pick the provider per query.
+- **Multi-provider search** — Google (default, via Apify), Brave, DuckDuckGo, behind one interface; pick the provider per query. DuckDuckGo is free/best-effort and gets bot-challenged from datacenter IPs — set `DDG_PROXY` (e.g. a Webshare rotating endpoint) to use it reliably from a server.
 - **Geo-targeting** — country + language + **city-level** results. City precision uses
   Google's UULE encoding (e.g. "Austin, Texas, United States"). Same query from
   different cities returns genuinely localized SERPs.

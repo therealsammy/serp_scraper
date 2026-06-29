@@ -5,6 +5,14 @@ import { api, API_URL } from "@/lib/api";
 import { authHeader } from "@/lib/auth";
 import type { EntityResponse, EntityResult, ExtractedResult, SearchJob } from "@/lib/types";
 import { Badge, Button, Card, Input } from "@/components/ui";
+import { SearchLoader } from "@/components/SearchLoader";
+
+// Map internal served_by strings (e.g. "apify:own", "serp_fallback") to friendly labels.
+function prettyProvider(servedBy: string): string {
+  const base = servedBy.split(/[:+]/)[0];
+  if (servedBy.startsWith("serp_fallback")) return "Google (backup)";
+  return { apify: "Google", ddg: "DuckDuckGo", brave: "Brave" }[base] ?? base;
+}
 
 const PROVIDERS = [
   { value: "apify", label: "Google" },
@@ -45,7 +53,7 @@ function statusBadge(s: ExtractedResult["status"]) {
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [provider, setProvider] = useState("ddg");
+  const [provider, setProvider] = useState("apify");
   const [count, setCount] = useState(10);
   const [country, setCountry] = useState("us");
   const [language, setLanguage] = useState("en");
@@ -221,7 +229,7 @@ export default function SearchPage() {
 
       {job && (
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span>Served by <Badge tone="blue">{job.served_by}</Badge></span>
+          <span>Served by <Badge tone="blue">{prettyProvider(job.served_by)}</Badge></span>
           {job.cached && <Badge tone="green">cache hit</Badge>}
           <div className="ml-auto flex gap-2">
             <Button variant="outline" onClick={() => exportAs("csv")} disabled={!results.length}>
@@ -233,6 +241,8 @@ export default function SearchPage() {
           </div>
         </div>
       )}
+
+      {loading && results.length === 0 && <SearchLoader />}
 
       <div className="space-y-3">
         {results.map((r) => (

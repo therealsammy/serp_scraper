@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 import httpx
 from lxml import html as lxml_html
 
+from ..config import settings
 from ..schemas import GeoOptions, SearchResult
 from .base import ProviderError
 
@@ -45,13 +46,29 @@ class DuckDuckGoProvider:
         self, query: str, count: int, geo: GeoOptions | None = None
     ) -> list[SearchResult]:
         # DDG HTML endpoint doesn't take structured geo; ignored here.
+        # Optional proxy (e.g. Webshare rotating endpoint) dodges datacenter-IP
+        # challenges. httpx 0.27 takes a single `proxy=` string.
+        client_kwargs: dict = {"timeout": 15, "headers": HEADERS, "follow_redirects": True}
+        if settings.ddg_proxy:
+            client_kwargs["proxy"] = settings.ddg_proxy
         try:
-            async with httpx.AsyncClient(timeout=15, headers=HEADERS,
-                                         follow_redirects=True) as client:
+            async with httpx.AsyncClient(**client_kwargs) as client:
                 resp = await client.post(ENDPOINT, data={"q": query})
             resp.raise_for_status()
         except httpx.HTTPError as exc:
             raise ProviderError(f"DuckDuckGo request failed: {exc}") from exc
+
+        # Detect an anti-bot challenge page (common from datacenter IPs — covers both
+        # DDG's own "anomaly modal" image CAPTCHA and Cloudflare-style interstitials).
+        # The parser would otherwise find no results and return an empty list.
+        low = resp.text.lower()
+        if ("anomaly-modal" in low or "challenge-submit" in low
+                or "challenge-form" in low or "verifying your browser" in low
+                or "challenge-platform" in low or "/cdn-cgi/challenge" in low):
+            raise ProviderError(
+                "DuckDuckGo issued a bot challenge from this server. "
+                "Try Google — DDG needs a residential proxy to work from a datacenter."
+            )
 
         tree = lxml_html.fromstring(resp.text)
         results: list[SearchResult] = []

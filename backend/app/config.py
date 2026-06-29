@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     scaleserp_api_key: str = ""
     serpapi_api_key: str = ""
 
+    # DuckDuckGo optional proxy (e.g. Webshare rotating endpoint) to dodge
+    # datacenter-IP bot challenges. Empty = direct (best-effort).
+    ddg_proxy: str = ""
+
     # Extraction
     extract_concurrency: int = 5
     extract_timeout_ms: int = 20000
