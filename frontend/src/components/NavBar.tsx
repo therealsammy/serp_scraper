@@ -21,6 +21,14 @@ export function NavBar() {
         </Link>
         <nav className="flex items-center gap-3 text-sm">
           <Link href="/" className="hover:underline">Search</Link>
+          <a
+            href="https://github.com/therealsammy/serp_scraper"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            GitHub
+          </a>
           {auth?.role === "admin" && (
             <Link href="/admin" className="hover:underline">Admin</Link>
           )}
