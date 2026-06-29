@@ -70,11 +70,26 @@ async def _fetch_html(url: str) -> str | None:
         await context.close()
 
 
+async def _fetch_html_retry(url: str, attempts: int = 2) -> str | None:
+    """Fetch with one retry — recovers transient failures (cold pages, blips)."""
+    last_exc: Exception | None = None
+    for i in range(attempts):
+        try:
+            return await _fetch_html(url)
+        except Exception as exc:  # noqa: BLE001 — retry any fetch failure
+            last_exc = exc
+            if i < attempts - 1:
+                await asyncio.sleep(0.5)
+    if last_exc:
+        raise last_exc
+    return None
+
+
 async def extract_one(result: SearchResult) -> ExtractedResult:
     out = ExtractedResult(**result.model_dump())
     out.domain = urlparse(result.url).netloc
     try:
-        html = await _fetch_html(result.url)
+        html = await _fetch_html_retry(result.url)
         if not html:
             out.status = "blocked"
             return out

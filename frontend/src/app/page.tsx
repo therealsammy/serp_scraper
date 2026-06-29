@@ -5,7 +5,7 @@ import { api, API_URL } from "@/lib/api";
 import { authHeader } from "@/lib/auth";
 import type { EntityResponse, EntityResult, ExtractedResult, SearchJob } from "@/lib/types";
 import { Badge, Button, Card, Input } from "@/components/ui";
-import { SearchLoader } from "@/components/SearchLoader";
+import { SearchLoader, ResultsSpinner } from "@/components/SearchLoader";
 
 // Map internal served_by strings (e.g. "apify:own", "serp_fallback") to friendly labels.
 function prettyProvider(servedBy: string): string {
@@ -331,6 +331,9 @@ export default function SearchPage() {
             )}
           </Card>
         ))}
+
+        {/* More results still streaming in */}
+        {loading && results.length > 0 && <ResultsSpinner />}
       </div>
     </div>
   );
