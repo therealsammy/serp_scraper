@@ -27,7 +27,14 @@ async def _get_browser():
             pw = await async_playwright().start()
             _browser = await pw.chromium.launch(
                 headless=True,
-                args=["--no-sandbox", "--disable-blink-features=AutomationControlled"],
+                args=[
+                    "--no-sandbox",
+                    # Critical in containers: /dev/shm is tiny (~64MB), so Chromium
+                    # must use /tmp instead or concurrent tabs crash (OOM) → "error".
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-blink-features=AutomationControlled",
+                ],
             )
     return _browser
 
@@ -49,6 +56,14 @@ async def _fetch_html(url: str) -> str | None:
     )
     try:
         page = await context.new_page()
+        # Block heavy resources we don't need (we only parse HTML text). Cuts memory
+        # and bandwidth sharply — the biggest lever for stability on small instances.
+        await page.route(
+            "**/*",
+            lambda route: route.abort()
+            if route.request.resource_type in {"image", "media", "font", "stylesheet"}
+            else route.continue_(),
+        )
         await page.goto(url, timeout=settings.extract_timeout_ms, wait_until="domcontentloaded")
         return await page.content()
     finally:

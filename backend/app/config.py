@@ -45,8 +45,9 @@ class Settings(BaseSettings):
     # datacenter-IP bot challenges. Empty = direct (best-effort).
     ddg_proxy: str = ""
 
-    # Extraction
-    extract_concurrency: int = 5
+    # Extraction. Keep concurrency low on small instances (Render free = 512MB);
+    # each concurrent page is a Chromium tab. Override via EXTRACT_CONCURRENCY.
+    extract_concurrency: int = 3
     extract_timeout_ms: int = 20000
 
     # Cache
